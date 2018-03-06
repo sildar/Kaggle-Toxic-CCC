@@ -26,7 +26,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
 
 # temporary hack to test travis
 if sys.argv[1] == 'travis':
-    return
+    quit()
 
 logging.info("Starting")
 
