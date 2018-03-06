@@ -10,11 +10,17 @@ from keras.layers import Input, Dense, Embedding, SpatialDropout1D, concatenate
 from keras.layers import GRU, Bidirectional, GlobalAveragePooling1D, GlobalMaxPooling1D
 from keras.preprocessing import text, sequence
 from keras.callbacks import Callback
+import logging
+import sys
 
 import os
 os.environ['OMP_NUM_THREADS'] = '4'
 
 np.random.seed(42)
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s')
+logging.info("Starting")
 
 EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
 
@@ -29,12 +35,15 @@ X_test = test["comment_text"].fillna("fillna").values
 X_train1 = []
 X_test1 = []
 
-
+logging.info("Extracting train dataset content")
 for traincommentcontent in train['comment_text']:
     X_train1 += [" ".join(word_tokenize(traincommentcontent))]
 
+logging.info("Extracting test dataset content")
 for testcommentcontent in train['comment_text']:
     X_test1 += [" ".join(word_tokenize(testcommentcontent))]
+
+logging.info("Extraction finished")
 
 max_features = 30000
 maxlen = 100
@@ -79,7 +88,7 @@ class RocAucEvaluation(Callback):
         if epoch % self.interval == 0:
             y_pred = self.model.predict(self.X_val, verbose=0)
             score = roc_auc_score(self.y_val, y_pred)
-            print("\n ROC-AUC - epoch: %d - score: %.6f \n" % (epoch+1, score))
+            logging.info("\n ROC-AUC - epoch: %d - score: %.6f \n" % (epoch + 1, score))
 
 
 def get_model():
@@ -111,11 +120,16 @@ X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train,
                                               train_size=0.95, random_state=233)
 RocAuc = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
 
+logging.info("Training model")
 hist = model.fit(X_tra, y_tra, batch_size=batch_size,
                  epochs=epochs, validation_data=(X_val, y_val),
                  callbacks=[RocAuc], verbose=2)
 
-
+logging.info("Predicting on test set")
 y_pred = model.predict(x_test, batch_size=1024)
 submission[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]] = y_pred
+
+logging.info("Printing to output file")
 submission.to_csv('data/submission.csv', index=False)
+
+logging.info("Finished")
