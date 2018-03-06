@@ -1,5 +1,4 @@
 import numpy as np
-np.random.seed(42)
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
@@ -13,11 +12,10 @@ from keras.layers import GRU, Bidirectional, GlobalAveragePooling1D, GlobalMaxPo
 from keras.preprocessing import text, sequence
 from keras.callbacks import Callback
 
-import warnings
-warnings.filterwarnings('ignore')
-
 import os
 os.environ['OMP_NUM_THREADS'] = '4'
+
+np.random.seed(42)
 
 
 def lemmatize_all(sentence):
@@ -31,9 +29,9 @@ def lemmatize_all(sentence):
             yield wnl.lemmatize(word, pos='a')
         elif tag.startswith('R'):
             yield wnl.lemmatize(word, pos='r')
-            
         else:
             yield word
+
 
 EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
 
@@ -45,17 +43,18 @@ X_train = train["comment_text"].fillna("fillna").values
 y_train = train[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
 X_test = test["comment_text"].fillna("fillna").values
 
-X_train1=[]
-X_test1=[]
-#Function call to lemmatize X_train and X_test
-print ("Train data lemmatization begins")
-for i in range(0,len(train)):
+X_train1 = []
+X_test1 = []
+
+# Function call to lemmatize X_train and X_test
+print("Train data lemmatization begins")
+for i in range(0, len(train)):
     X_train1.append(" ".join(lemmatize_all(str(train['comment_text'][i]))))
-print ("Train data lemmatization ends")
-print ("Test data lemmatization begins")
-for i in range (0, len(test)):
+print("Train data lemmatization ends")
+print("Test data lemmatization begins")
+for i in range(0, len(test)):
     X_test1.append(" ".join(lemmatize_all(str(test['comment_text'][i]))))
-print ("Test data lemmatization ends")
+print("Test data lemmatization ends")
 
 max_features = 30000
 maxlen = 100
@@ -69,16 +68,21 @@ x_train = sequence.pad_sequences(X_train, maxlen=maxlen)
 x_test = sequence.pad_sequences(X_test, maxlen=maxlen)
 
 
-def get_coefs(word, *arr): return word, np.asarray(arr, dtype='float32')
+def get_coefs(word, *arr):
+    return word, np.asarray(arr, dtype='float32')
+
+
 embeddings_index = dict(get_coefs(*o.rstrip().rsplit(' ')) for o in open(EMBEDDING_FILE))
 
 word_index = tokenizer.word_index
 nb_words = min(max_features, len(word_index))
 embedding_matrix = np.zeros((nb_words, embed_size))
 for word, i in word_index.items():
-    if i >= max_features: continue
+    if i >= max_features:
+        continue
     embedding_vector = embeddings_index.get(word)
-    if embedding_vector is not None: embedding_matrix[i] = embedding_vector
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
 
 
 class RocAucEvaluation(Callback):
@@ -99,12 +103,13 @@ def get_model():
     inp = Input(shape=(maxlen, ))
     x = Embedding(max_features, embed_size, weights=[embedding_matrix])(inp)
     x = SpatialDropout1D(0.4)(x)
-    x = Bidirectional(GRU(80, return_sequences=True,activation='relu', dropout=0.3, recurrent_dropout=0.))(x)
+    x = Bidirectional(GRU(80, return_sequences=True, activation='relu',
+                          dropout=0.3, recurrent_dropout=0.))(x)
     avg_pool = GlobalAveragePooling1D()(x)
     max_pool = GlobalMaxPooling1D()(x)
     conc = concatenate([avg_pool, max_pool])
     outp = Dense(6, activation="sigmoid")(conc)
-    
+
     model = Model(inputs=inp, outputs=outp)
     model.compile(loss='binary_crossentropy',
                   optimizer='adam',
@@ -112,16 +117,19 @@ def get_model():
 
     return model
 
+
 model = get_model()
 
 
 batch_size = 32
 epochs = 2
 
-X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train, train_size=0.95, random_state=233)
+X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train,
+                                              train_size=0.95, random_state=233)
 RocAuc = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
 
-hist = model.fit(X_tra, y_tra, batch_size=batch_size, epochs=epochs, validation_data=(X_val, y_val),
+hist = model.fit(X_tra, y_tra, batch_size=batch_size,
+                 epochs=epochs, validation_data=(X_val, y_val),
                  callbacks=[RocAuc], verbose=2)
 
 
