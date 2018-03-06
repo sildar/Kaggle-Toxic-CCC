@@ -3,8 +3,7 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
-from nltk import WordNetLemmatizer
-from nltk import pos_tag, word_tokenize
+from nltk import word_tokenize
 
 from keras.models import Model
 from keras.layers import Input, Dense, Embedding, SpatialDropout1D, concatenate
@@ -16,22 +15,6 @@ import os
 os.environ['OMP_NUM_THREADS'] = '4'
 
 np.random.seed(42)
-
-
-def lemmatize_all(sentence):
-    wnl = WordNetLemmatizer()
-    for word, tag in pos_tag(word_tokenize(sentence)):
-        if tag.startswith("NN"):
-            yield wnl.lemmatize(word, pos='n')
-        elif tag.startswith('VB'):
-            yield wnl.lemmatize(word, pos='v')
-        elif tag.startswith('JJ'):
-            yield wnl.lemmatize(word, pos='a')
-        elif tag.startswith('R'):
-            yield wnl.lemmatize(word, pos='r')
-        else:
-            yield word
-
 
 EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
 
@@ -49,11 +32,11 @@ X_test1 = []
 # Function call to lemmatize X_train and X_test
 print("Train data lemmatization begins")
 for i in range(0, len(train)):
-    X_train1.append(" ".join(lemmatize_all(str(train['comment_text'][i]))))
+    X_train1.append(" ".join(word_tokenize(train['comment_text'][i])))
 print("Train data lemmatization ends")
 print("Test data lemmatization begins")
 for i in range(0, len(test)):
-    X_test1.append(" ".join(lemmatize_all(str(test['comment_text'][i]))))
+    X_test1.append(" ".join(word_tokenize(test['comment_text'][i])))
 print("Test data lemmatization ends")
 
 max_features = 30000
