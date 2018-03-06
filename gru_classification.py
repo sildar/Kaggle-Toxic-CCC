@@ -29,15 +29,12 @@ X_test = test["comment_text"].fillna("fillna").values
 X_train1 = []
 X_test1 = []
 
-# Function call to lemmatize X_train and X_test
-print("Train data lemmatization begins")
-for i in range(0, len(train)):
-    X_train1.append(" ".join(word_tokenize(train['comment_text'][i])))
-print("Train data lemmatization ends")
-print("Test data lemmatization begins")
-for i in range(0, len(test)):
-    X_test1.append(" ".join(word_tokenize(test['comment_text'][i])))
-print("Test data lemmatization ends")
+
+for traincommentcontent in train['comment_text']:
+    X_train1 += [" ".join(word_tokenize(traincommentcontent))]
+
+for testcommentcontent in train['comment_text']:
+    X_test1 += [" ".join(word_tokenize(testcommentcontent))]
 
 max_features = 30000
 maxlen = 100
