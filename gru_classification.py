@@ -57,14 +57,13 @@ x_train = sequence.pad_sequences(X_train, maxlen=maxlen)
 x_test = sequence.pad_sequences(X_test, maxlen=maxlen)
 
 
-def get_coefs(line):
-    linecontent = line.rstrip().rsplit(' ')
-    word = linecontent[0]
-    vec = linecontent[1:]
-    return word, np.asarray(vec, dtype='float32')
-
-
-embeddings_index = dict(get_coefs(line) for line in open(EMBEDDING_FILE, encoding='utf-8'))
+embeddings_index = {}
+with open(EMBEDDING_FILE, encoding='utf-8') as f:
+    for line in f:
+        linecontent = line.rstrip().rsplit(' ')
+        word = linecontent[0]
+        vec = linecontent[1:]
+        embeddings_index[word] = np.asarray(vec, dtype='float32')
 
 word_index = tokenizer.word_index
 nb_words = min(max_features, len(word_index))
