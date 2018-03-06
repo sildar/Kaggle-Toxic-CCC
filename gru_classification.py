@@ -23,6 +23,11 @@ np.random.seed(42)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(message)s')
+
+# temporary hack to test travis
+if sys.argv[1] == 'travis':
+    return
+
 logging.info("Starting")
 
 EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
