@@ -35,11 +35,11 @@ def lemmatize_all(sentence):
         else:
             yield word
 
-EMBEDDING_FILE = '../input/fasttext-crawl-300d-2m/crawl-300d-2M.vec'
+EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
 
-train = pd.read_csv('../input/jigsaw-toxic-comment-classification-challenge/train.csv')
-test = pd.read_csv('../input/jigsaw-toxic-comment-classification-challenge/test.csv')
-submission = pd.read_csv('../input/jigsaw-toxic-comment-classification-challenge/sample_submission.csv')
+train = pd.read_csv('data/train.csv')
+test = pd.read_csv('data/test.csv')
+submission = pd.read_csv('data/sample_submission.csv')
 
 X_train = train["comment_text"].fillna("fillna").values
 y_train = train[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
@@ -127,4 +127,4 @@ hist = model.fit(X_tra, y_tra, batch_size=batch_size, epochs=epochs, validation_
 
 y_pred = model.predict(x_test, batch_size=1024)
 submission[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]] = y_pred
-submission.to_csv('submission.csv', index=False)
+submission.to_csv('data/submission.csv', index=False)
