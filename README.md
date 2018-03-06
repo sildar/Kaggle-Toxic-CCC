@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/sildar/Kaggle-Toxic-CCC.svg?branch=master)](https://travis-ci.org/sildar/Kaggle-Toxic-CCC)
 # Kaggle-Toxic-CCC
 
 ## Challenge
