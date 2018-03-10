@@ -25,15 +25,14 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(message)s')
 
 
-def main():
-    EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
-
-    train = pd.read_csv('data/train.csv')
-    test = pd.read_csv('data/test.csv')
-    submission = pd.read_csv('data/sample_submission.csv')
+def preprocess(trainfile, testfile):
+    logging.info("Starting Extraction")
+    train = pd.read_csv()
+    test = pd.read_csv()
 
     X_train = train["comment_text"].fillna("fillna").values
-    y_train = train[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
+    y_train = train[["toxic", "severe_toxic", "obscene",
+                     "threat", "insult", "identity_hate"]].values
     X_test = test["comment_text"].fillna("fillna").values
 
     X_train1 = []
@@ -41,13 +40,22 @@ def main():
 
     logging.info("Extracting train dataset content")
     X_train1 = [" ".join(word_tokenize(traincommentcontent))
-                for traincommentcontent in train['comment_text']]
+                for traincommentcontent in X_train['comment_text']]
 
     logging.info("Extracting test dataset content")
     X_test1 = [" ".join(word_tokenize(testcommentcontent))
-               for testcommentcontent in test['comment_text']]
-
+               for testcommentcontent in X_test['comment_text']]
     logging.info("Extraction finished")
+
+    return X_train1, X_test1, y_train
+
+
+def main():
+    EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
+
+    trainingfile = 'data/train.csv'
+    testingfile = 'data/test.csv'
+    X_train1, X_test1, y_train = preprocess(trainingfile, testingfile)
 
     max_features = 30000
     maxlen = 100
@@ -128,6 +136,8 @@ def main():
 
     logging.info("Predicting on test set")
     y_pred = model.predict(x_test, batch_size=1024)
+
+    submission = pd.read_csv('data/sample_submission.csv')
     submission[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]] = y_pred
 
     logging.info("Printing to output file")
@@ -139,7 +149,4 @@ if __name__ == '__main__':
     if len(sys.argv) == 2 and sys.argv[1] == 'travis':
         quit()
 
-    if not os.path.exists('./data/gru_model.h5'):
-        logging.info("Starting training model")
-        main()
-        logging.info("Finished training model")
+    main()
