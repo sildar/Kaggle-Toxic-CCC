@@ -25,7 +25,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(message)s')
 
 
-def preprocess(trainfile, testfile):
+def preprocess(trainfile, testfile, max_features, maxlen):
     logging.info("Starting Extraction")
     train = pd.read_csv()
     test = pd.read_csv()
@@ -47,20 +47,6 @@ def preprocess(trainfile, testfile):
                for testcommentcontent in X_test['comment_text']]
     logging.info("Extraction finished")
 
-    return X_train1, X_test1, y_train
-
-
-def main():
-    EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
-
-    trainingfile = 'data/train.csv'
-    testingfile = 'data/test.csv'
-    X_train1, X_test1, y_train = preprocess(trainingfile, testingfile)
-
-    max_features = 30000
-    maxlen = 100
-    embed_size = 300
-
     tokenizer = text.Tokenizer(num_words=max_features)
     tokenizer.fit_on_texts(list(X_train1) + list(X_test1))
     X_train = tokenizer.texts_to_sequences(X_train1)
@@ -68,6 +54,20 @@ def main():
     x_train = sequence.pad_sequences(X_train, maxlen=maxlen)
     x_test = sequence.pad_sequences(X_test, maxlen=maxlen)
 
+    return x_train, x_test, y_train, tokenizer
+
+
+def main():
+
+    trainingfile = 'data/train.csv'
+    testingfile = 'data/test.csv'
+
+    max_features = 30000
+    maxlen = 100
+    x_train, x_test, y_train, tokenizer = preprocess(trainingfile, testingfile,
+                                                     max_features, maxlen)
+
+    EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
     embeddings_index = {}
     with open(EMBEDDING_FILE, encoding='utf-8') as f:
         for line in f:
@@ -76,6 +76,7 @@ def main():
             vec = linecontent[1:]
             embeddings_index[word] = np.asarray(vec, dtype='float32')
 
+    embed_size = 300
     word_index = tokenizer.word_index
     nb_words = min(max_features, len(word_index))
     embedding_matrix = np.zeros((nb_words, embed_size))
@@ -103,7 +104,8 @@ def main():
 
     def get_model():
         inp = Input(shape=(maxlen, ))
-        x = Embedding(max_features, embed_size, weights=[embedding_matrix])(inp)
+        x = Embedding(max_features, embed_size,
+                      weights=[embedding_matrix])(inp)
         x = SpatialDropout1D(0.4)(x)
         x = Bidirectional(GRU(80, return_sequences=True, activation='relu',
                               dropout=0.3, recurrent_dropout=0.))(x)
@@ -125,7 +127,8 @@ def main():
     epochs = 2
 
     X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train,
-                                                  train_size=0.95, random_state=233)
+                                                  train_size=0.95,
+                                                  random_state=233)
     RocAuc = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
 
     logging.info("Training model")
@@ -138,7 +141,8 @@ def main():
     y_pred = model.predict(x_test, batch_size=1024)
 
     submission = pd.read_csv('data/sample_submission.csv')
-    submission[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]] = y_pred
+    submission[["toxic", "severe_toxic", "obscene",
+                "threat", "insult", "identity_hate"]] = y_pred
 
     logging.info("Printing to output file")
     submission.to_csv('data/submission.csv', index=False)
