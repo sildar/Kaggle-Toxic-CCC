@@ -30,13 +30,8 @@ def preprocess(trainfile, testfile, max_features, maxlen):
     train = pd.read_csv(trainfile)
     test = pd.read_csv(testfile)
 
-    X_train = train["comment_text"].fillna("fillna").values
     y_train = train[["toxic", "severe_toxic", "obscene",
                      "threat", "insult", "identity_hate"]].values
-    X_test = test["comment_text"].fillna("fillna").values
-
-    X_train1 = []
-    X_test1 = []
 
     logging.info("Extracting train dataset content")
     X_train1 = [" ".join(word_tokenize(traincommentcontent))
