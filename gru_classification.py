@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from nltk import word_tokenize
 
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.layers import Input, Dense, Embedding, SpatialDropout1D, concatenate
 from keras.layers import GRU, Bidirectional, GlobalAveragePooling1D, GlobalMaxPooling1D
 from keras.preprocessing import text, sequence
@@ -27,8 +27,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
 
 def preprocess(trainfile, testfile, max_features, maxlen):
     logging.info("Starting Extraction")
-    train = pd.read_csv()
-    test = pd.read_csv()
+    train = pd.read_csv(trainfile)
+    test = pd.read_csv(testfile)
 
     X_train = train["comment_text"].fillna("fillna").values
     y_train = train[["toxic", "severe_toxic", "obscene",
@@ -40,11 +40,11 @@ def preprocess(trainfile, testfile, max_features, maxlen):
 
     logging.info("Extracting train dataset content")
     X_train1 = [" ".join(word_tokenize(traincommentcontent))
-                for traincommentcontent in X_train['comment_text']]
+                for traincommentcontent in train['comment_text']]
 
     logging.info("Extracting test dataset content")
     X_test1 = [" ".join(word_tokenize(testcommentcontent))
-               for testcommentcontent in X_test['comment_text']]
+               for testcommentcontent in test['comment_text']]
     logging.info("Extraction finished")
 
     tokenizer = text.Tokenizer(num_words=max_features)
@@ -121,21 +121,25 @@ def main():
 
         return model
 
-    model = get_model()
+    if not os.path.exists('./data/gru_model.h5'):
+        logging.info("Training model")
+        model = get_model()
 
-    batch_size = 32
-    epochs = 2
+        batch_size = 32
+        epochs = 2
 
-    X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train,
-                                                  train_size=0.95,
-                                                  random_state=233)
-    RocAuc = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
+        X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train,
+                                                      train_size=0.95,
+                                                      random_state=233)
 
-    logging.info("Training model")
-    model.fit(X_tra, y_tra, batch_size=batch_size,
-              epochs=epochs, validation_data=(X_val, y_val),
-              callbacks=[RocAuc], verbose=2)
-    model.save('./data/gru_model.h5')
+        RocAuc = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
+        model.fit(X_tra, y_tra, batch_size=batch_size,
+                  epochs=epochs, validation_data=(X_val, y_val),
+                  callbacks=[RocAuc], verbose=2)
+        model.save('./data/gru_model.h5')
+    else:
+        logging.info("Loading model")
+        model = load_model('./data/gru_model.h5')
 
     logging.info("Predicting on test set")
     y_pred = model.predict(x_test, batch_size=1024)
