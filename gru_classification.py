@@ -67,6 +67,7 @@ def main():
     x_train, x_test, y_train, tokenizer = preprocess(trainingfile, testingfile,
                                                      max_features, maxlen)
 
+    logging.info("Loading word embeddings")
     EMBEDDING_FILE = 'data/crawl-300d-2M.vec'
     embeddings_index = {}
     with open(EMBEDDING_FILE, encoding='utf-8') as f:
