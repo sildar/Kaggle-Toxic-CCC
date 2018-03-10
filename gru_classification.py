@@ -17,7 +17,7 @@ import logging
 import sys
 
 import os
-os.environ['OMP_NUM_THREADS'] = '4'
+os.environ['OMP_NUM_THREADS'] = '3'
 
 np.random.seed(42)
 
@@ -40,12 +40,12 @@ def main():
     X_test1 = []
 
     logging.info("Extracting train dataset content")
-    for traincommentcontent in train['comment_text']:
-        X_train1 += [" ".join(word_tokenize(traincommentcontent))]
+    X_train1 = [" ".join(word_tokenize(traincommentcontent))
+                for traincommentcontent in train['comment_text']]
 
     logging.info("Extracting test dataset content")
-    for testcommentcontent in train['comment_text']:
-        X_test1 += [" ".join(word_tokenize(testcommentcontent))]
+    X_test1 = [" ".join(word_tokenize(testcommentcontent))
+               for testcommentcontent in test['comment_text']]
 
     logging.info("Extraction finished")
 
@@ -89,7 +89,9 @@ def main():
             if epoch % self.interval == 0:
                 y_pred = self.model.predict(self.X_val, verbose=0)
                 score = roc_auc_score(self.y_val, y_pred)
+                allclasses = roc_auc_score(self.y_val, y_pred, average=None)
                 logging.info("\n ROC-AUC - epoch: %d - score: %.6f \n" % (epoch + 1, score))
+                logging.info("Classes ROC scores : %s", str(allclasses))
 
     def get_model():
         inp = Input(shape=(maxlen, ))
@@ -119,9 +121,10 @@ def main():
     RocAuc = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
 
     logging.info("Training model")
-    hist = model.fit(X_tra, y_tra, batch_size=batch_size,
-                     epochs=epochs, validation_data=(X_val, y_val),
-                     callbacks=[RocAuc], verbose=2)
+    model.fit(X_tra, y_tra, batch_size=batch_size,
+              epochs=epochs, validation_data=(X_val, y_val),
+              callbacks=[RocAuc], verbose=2)
+    model.save('./data/gru_model.h5')
 
     logging.info("Predicting on test set")
     y_pred = model.predict(x_test, batch_size=1024)
@@ -131,11 +134,12 @@ def main():
     submission.to_csv('data/submission.csv', index=False)
 
 
-
 if __name__ == '__main__':
     # temporary hack to test travis
     if len(sys.argv) == 2 and sys.argv[1] == 'travis':
         quit()
-    logging.info("Starting")
-    main()
-    logging.info("Finished")
+
+    if not os.path.exists('./data/gru_model.h5'):
+        logging.info("Starting training model")
+        main()
+        logging.info("Finished training model")
