@@ -26,6 +26,11 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
 
 
 def preprocess(trainfile, testfile, max_features, maxlen):
+    """
+    Preprocesses training and testing data
+    Tokenizes and pads sentences
+    A tokenizer is also given back for keeping track of the word index
+    """
     logging.info("Starting Extraction")
     train = pd.read_csv(trainfile)
     test = pd.read_csv(testfile)
