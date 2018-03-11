@@ -58,6 +58,7 @@ Better scores should be in reach with multiple scoring methods / NNs, but the di
 Apart from the *things to try*, there are some more software development improvements to consider.
 
 There is no testing as this is a POC. Travis CI is set however, so just adding a setup.py file and some testing would be kind of quick.
+Travis CI is only used as a way to check that the imports are covered by the requirements.txt file.
 
 Parameters are hardcoded and should be in another file or passed as script parameters.
 
